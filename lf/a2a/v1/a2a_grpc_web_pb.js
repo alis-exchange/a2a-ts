@@ -20,11 +20,11 @@ const grpc = {};
 grpc.web = require('grpc-web');
 
 
-var google_api_annotations_pb = require('../../../google/api/annotations_pb.js')
+var google_api_annotations_pb = require('@alis-build/google-common-protos/google/api/annotations_pb.js')
 
-var google_api_client_pb = require('../../../google/api/client_pb.js')
+var google_api_client_pb = require('@alis-build/google-common-protos/google/api/client_pb.js')
 
-var google_api_field_behavior_pb = require('../../../google/api/field_behavior_pb.js')
+var google_api_field_behavior_pb = require('@alis-build/google-common-protos/google/api/field_behavior_pb.js')
 
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js')
 
@@ -750,4 +750,3 @@ proto.lf.a2a.v1.A2AServicePromiseClient.prototype.deleteTaskPushNotificationConf
 
 
 module.exports = proto.lf.a2a.v1;
-

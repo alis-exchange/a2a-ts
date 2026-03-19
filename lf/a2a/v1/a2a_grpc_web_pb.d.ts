@@ -1,7 +1,7 @@
 import * as grpcWeb from 'grpc-web';
 
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb'; // proto import: "google/protobuf/empty.proto"
-import * as lf_a2a_v1_a2a_pb from '../../../lf/a2a/v1/a2a_pb'; // proto import: "lf/a2a/v1/a2a.proto"
+import * as lf_a2a_v1_a2a_pb from '@alis-build/a2a/lf/a2a/v1/a2a_pb'; // proto import: "lf/a2a/v1/a2a.proto"
 
 
 export class A2AServiceClient {
@@ -145,4 +145,3 @@ export class A2AServicePromiseClient {
   ): Promise<google_protobuf_empty_pb.Empty>;
 
 }
-

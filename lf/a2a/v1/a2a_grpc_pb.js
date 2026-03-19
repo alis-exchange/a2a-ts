@@ -4,10 +4,10 @@
 // Older protoc compilers don't understand edition yet.
 'use strict';
 var grpc = require('@grpc/grpc-js');
-var lf_a2a_v1_a2a_pb = require('../../../lf/a2a/v1/a2a_pb.js');
-var google_api_annotations_pb = require('../../../google/api/annotations_pb.js');
-var google_api_client_pb = require('../../../google/api/client_pb.js');
-var google_api_field_behavior_pb = require('../../../google/api/field_behavior_pb.js');
+var lf_a2a_v1_a2a_pb = require('@alis-build/a2a/lf/a2a/v1/a2a_pb.js');
+var google_api_annotations_pb = require('@alis-build/google-common-protos/google/api/annotations_pb.js');
+var google_api_client_pb = require('@alis-build/google-common-protos/google/api/client_pb.js');
+var google_api_field_behavior_pb = require('@alis-build/google-common-protos/google/api/field_behavior_pb.js');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
 var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
