@@ -1,6 +1,11 @@
 # a2a-ts
 
-TypeScript client and types for the Agent-to-Agent (A2A) API. Uses JSON-RPC 2.0 over HTTP with support for both unary and streaming (SSE) operations.
+TypeScript types and a **JSON-RPC 2.0** client for the **Agent-to-Agent (A2A)** API: unary requests (single JSON response) and **Server-Sent Events (SSE)** streaming for live updates.
+
+## Requirements
+
+- **Runtime**: `fetch`, `TextDecoderStream`, and `AbortSignal` (e.g. **Node.js 18+** or modern browsers).
+- **Types**: Request/response shapes use `*.AsObject` types from `lf/a2a/v1/a2a_pb` (protobuf JS).
 
 ## Installation
 
@@ -8,88 +13,137 @@ TypeScript client and types for the Agent-to-Agent (A2A) API. Uses JSON-RPC 2.0 
 npm install @alis-build/a2a
 ```
 
-## Quick Start
+Configure your bundler or `package.json` `exports` so `transport/jsonrpc` resolves, or import from this repository path:
 
 ```typescript
-import { A2AClient } from "@alis-build/a2a/transport/jsonrpc";
+import { A2AClient } from "./transport/jsonrpc";
+```
+
+## Quick start
+
+```typescript
+import { A2AClient } from "./transport/jsonrpc";
 
 const client = new A2AClient({
-  baseUrl: "https://api.example.com",
+  baseUrl: "https://agent.example.com/jsonrpc",
   getToken: async () => "your-bearer-token", // optional
+  extensionUris: ["https://agent.example.com/extensions"], // optional
+  extraHeaders: { "X-Custom-Header": "value" }, // optional
 });
 
-// Unary: send message, wait for full response
+// Unary — one JSON-RPC response
 const response = await client.sendMessage({
+  tenant: "",
   message: { text: { text: "Hello" } },
   configuration: { acceptedOutputModesList: ["text"], blocking: true },
 });
 
-// Streaming: send message, receive incremental updates
+// Streaming — SSE frames, each parsed as JSON-RPC
 const controller = new AbortController();
 for await (const event of client.sendStreamingMessage(
   {
+    tenant: "",
     message: { text: { text: "Hello" } },
     configuration: { acceptedOutputModesList: ["text"], blocking: false },
   },
-  controller.signal
+  controller.signal,
 )) {
   console.log(event);
 }
+// controller.abort() ends the stream without treating it as a hard failure
 ```
 
+## `A2AClient` methods
+
+| Method                             | JSON-RPC method                    | Mode                       |
+| ---------------------------------- | ---------------------------------- | -------------------------- |
+| `sendMessage`                      | `SendMessage`                      | Unary                      |
+| `getTask`                          | `GetTask`                          | Unary                      |
+| `listTasks`                        | `ListTasks`                        | Unary                      |
+| `cancelTask`                       | `CancelTask`                       | Unary                      |
+| `getTaskPushNotificationConfig`    | `GetTaskPushNotificationConfig`    | Unary                      |
+| `createTaskPushNotificationConfig` | `CreateTaskPushNotificationConfig` | Unary                      |
+| `listTaskPushNotificationConfigs`  | `ListTaskPushNotificationConfigs`  | Unary                      |
+| `deleteTaskPushNotificationConfig` | `DeleteTaskPushNotificationConfig` | Unary                      |
+| `getExtendedAgentCard`             | `GetExtendedAgentCard`             | Unary                      |
+| `sendStreamingMessage`             | `SendStreamingMessage`             | Streaming (async iterator) |
+| `subscribeToTask`                  | `SubscribeToTask`                  | Streaming (async iterator) |
+
+Push-notification and extended-card helpers mirror the A2A protobuf service surface.
+
 ## Transport (`transport/jsonrpc`)
-
-The JSON-RPC transport provides:
-
-| Mode       | Methods                                                       | Use case                          |
-| ---------- | ------------------------------------------------------------- | --------------------------------- |
-| **Unary**  | `sendMessage`, `getTask`, `listTasks`, `cancelTask`, etc.     | Single request/response            |
-| **Streaming** | `sendStreamingMessage`, `subscribeToTask`                  | Incremental updates via SSE        |
 
 ### Architecture
 
 ```
 A2AClient
-├── request()     → POST JSON-RPC → parse single JSON response
-└── stream()      → POST JSON-RPC → readSseStream() → yield each SSE frame as JSON-RPC response
+├── request()  → POST JSON body → single JSON-RPC response
+└── stream()   → POST JSON body → readSseStream() → yield each SSE `data:` frame as JSON-RPC
 ```
 
-### Error Handling
+### Errors
 
-- **`JsonRpcTransportError`**: Network failures, non-2xx HTTP, stream read errors. Has optional `status` for HTTP status code.
-- **`JsonRpcProtocolError`**: Server returned a JSON-RPC error object. Use `code` or `instanceof` for typed handling:
-  - `TaskNotFoundError` (-32001)
-  - `TaskNotCancelableError` (-32002)
-  - `PushNotificationNotSupportedError` (-32003)
-  - `UnsupportedOperationError` (-32004)
-  - `ContentTypeNotSupportedError` (-32005)
-  - `InvalidAgentResponseError` (-32006)
-  - `ExtendedCardNotConfiguredError` (-32007)
-  - `UnauthenticatedError` (-31401)
-  - `UnauthorizedError` (-31403)
+| Class                   | When                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| `JsonRpcTransportError` | Network failure, non-2xx HTTP, invalid JSON body, SSE read errors. Optional `status`. |
+| `JsonRpcProtocolError`  | JSON-RPC `error` in the response. Subclasses by `code`:                               |
+
+| Subclass                            | Code   |
+| ----------------------------------- | ------ |
+| `TaskNotFoundError`                 | -32001 |
+| `TaskNotCancelableError`            | -32002 |
+| `PushNotificationNotSupportedError` | -32003 |
+| `UnsupportedOperationError`         | -32004 |
+| `ContentTypeNotSupportedError`      | -32005 |
+| `InvalidAgentResponseError`         | -32006 |
+| `ExtendedCardNotConfiguredError`    | -32007 |
+| `UnauthenticatedError`              | -31401 |
+| `UnauthorizedError`                 | -31403 |
+
+Use `createProtocolError(raw)` if you need the same mapping from a raw `JsonRpcError`.
 
 ### Exports
 
 ```typescript
-// Client and config
-import { A2AClient } from "@alis-build/a2a/transport/jsonrpc";
-import type { A2AClientConfig } from "@alis-build/a2a/transport/jsonrpc";
-
-// Errors
 import {
+  A2AClient,
+  createProtocolError,
   JsonRpcProtocolError,
   JsonRpcTransportError,
   TaskNotFoundError,
+  TaskNotCancelableError,
+  PushNotificationNotSupportedError,
+  UnsupportedOperationError,
+  ContentTypeNotSupportedError,
+  InvalidAgentResponseError,
+  ExtendedCardNotConfiguredError,
   UnauthenticatedError,
-  // ... other typed errors
-} from "@alis-build/a2a/transport/jsonrpc";
+  UnauthorizedError,
+} from "./transport/jsonrpc";
+
+import type {
+  A2AClientConfig,
+  JsonRpcError,
+  JsonRpcRequest,
+  JsonRpcResponse,
+} from "./transport/jsonrpc";
 ```
+
+Protobuf message types (e.g. `SendMessageRequest`) live under `lf/a2a/v1/a2a_pb`.
+
+## Project layout
+
+| Path                 | Purpose                                    |
+| -------------------- | ------------------------------------------ |
+| `lf/a2a/v1/`         | Generated protobuf JS/TS (A2A API)         |
+| `transport/jsonrpc/` | JSON-RPC client, SSE parser, errors, types |
 
 ## Dependencies
 
-- `google-protobuf` – Protobuf types for A2A messages
-- `@alis-build/google-common-protos` – Google common protos
+- `google-protobuf` — runtime for generated messages
+- `@alis-build/google-common-protos` — shared Google protos
+- `grpc-web` / `@grpc/grpc-js` — gRPC definitions alongside JSON-RPC (optional for this client)
 
 ## License
 
-See project LICENSE file.
+See [LICENSE](./LICENSE).

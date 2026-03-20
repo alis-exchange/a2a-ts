@@ -86,4 +86,11 @@ export interface A2AClientConfig {
    * May be async to support token refresh.
    */
   getToken?: () => string | Promise<string>;
+  /**
+   * Optional A2A extension activation (comma-separated URIs per A2A spec).
+   * Sent as the `A2A-Extensions` HTTP header on every JSON-RPC request.
+   */
+  extensionUris?: string[];
+  /** Optional extra headers merged after Content-Type / Authorization. */
+  extraHeaders?: Record<string, string>;
 }

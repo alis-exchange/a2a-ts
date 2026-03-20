@@ -16,10 +16,7 @@ import {
   Task,
   TaskPushNotificationConfig,
 } from "../../lf/a2a/v1/a2a_pb";
-import {
-  createProtocolError,
-  JsonRpcTransportError,
-} from "./errors";
+import { createProtocolError, JsonRpcTransportError } from "./errors";
 import { readSseStream } from "./sse";
 
 /**
@@ -296,6 +293,16 @@ export class A2AClient {
     if (this.config.getToken) {
       const token = await this.config.getToken();
       headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    if (this.config.extensionUris?.length) {
+      headers["A2A-Extensions"] = this.config.extensionUris.join(", ");
+    }
+
+    if (this.config.extraHeaders) {
+      for (const [k, v] of Object.entries(this.config.extraHeaders)) {
+        headers[k] = v;
+      }
     }
 
     return headers;
