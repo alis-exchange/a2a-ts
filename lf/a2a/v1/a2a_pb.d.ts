@@ -1,8 +1,8 @@
 import * as jspb from 'google-protobuf'
 
-import * as google_api_annotations_pb from '../../../google/api/annotations_pb'; // proto import: "google/api/annotations.proto"
-import * as google_api_client_pb from '../../../google/api/client_pb'; // proto import: "google/api/client.proto"
-import * as google_api_field_behavior_pb from '../../../google/api/field_behavior_pb'; // proto import: "google/api/field_behavior.proto"
+import * as google_api_annotations_pb from '@alis-build/google-common-protos/google/api/annotations_pb'; // proto import: "google/api/annotations.proto"
+import * as google_api_client_pb from '@alis-build/google-common-protos/google/api/client_pb'; // proto import: "google/api/client.proto"
+import * as google_api_field_behavior_pb from '@alis-build/google-common-protos/google/api/field_behavior_pb'; // proto import: "google/api/field_behavior.proto"
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb'; // proto import: "google/protobuf/empty.proto"
 import * as google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb'; // proto import: "google/protobuf/struct.proto"
 import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb'; // proto import: "google/protobuf/timestamp.proto"

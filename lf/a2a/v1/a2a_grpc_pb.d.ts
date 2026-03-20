@@ -3,9 +3,9 @@
 // package: lf.a2a.v1
 // file: lf/a2a/v1/a2a.proto
 
-import * as lf_a2a_v1_a2a_pb from "../../../lf/a2a/v1/a2a_pb";
+import * as lf_a2a_v1_a2a_pb from "@alis-build/a2a/lf/a2a/v1/a2a_pb";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
-import * as grpc from "grpc";
+import * as grpc from "@grpc/grpc-js";
 
 interface IA2AServiceService extends grpc.ServiceDefinition<grpc.UntypedServiceImplementation> {
   sendMessage: grpc.MethodDefinition<lf_a2a_v1_a2a_pb.SendMessageRequest, lf_a2a_v1_a2a_pb.SendMessageResponse>;
