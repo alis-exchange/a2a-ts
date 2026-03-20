@@ -28,3 +28,4 @@ export type {
   JsonRpcRequest,
   JsonRpcResponse,
 } from "./types";
+export type * from "./wire";

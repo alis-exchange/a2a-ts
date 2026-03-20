@@ -1,21 +1,22 @@
 import { A2AClientConfig, JsonRpcRequest, JsonRpcResponse } from "./types";
-import {
+import type {
   AgentCard,
   CancelTaskRequest,
-  DeleteTaskPushNotificationConfigRequest,
+  CreateTaskPushConfigRequest,
+  DeleteTaskPushConfigRequest,
   GetExtendedAgentCardRequest,
-  GetTaskPushNotificationConfigRequest,
+  GetTaskPushConfigRequest,
   GetTaskRequest,
-  ListTaskPushNotificationConfigsRequest,
-  ListTaskPushNotificationConfigsResponse,
+  ListTaskPushConfigRequest,
+  ListTaskPushConfigResponse,
   ListTasksRequest,
   ListTasksResponse,
   SendMessageRequest,
   StreamResponse,
   SubscribeToTaskRequest,
   Task,
-  TaskPushNotificationConfig,
-} from "../../lf/a2a/v1/a2a_pb";
+  TaskPushConfig,
+} from "./wire";
 import { createProtocolError, JsonRpcTransportError } from "./errors";
 import { readSseStream } from "./sse";
 
@@ -72,38 +73,36 @@ export class A2AClient {
    * Sends a message and waits for a single complete response.
    * Use sendStreamingMessage() if the agent streams partial updates.
    */
-  async sendMessage(
-    params: SendMessageRequest.AsObject,
-  ): Promise<StreamResponse.AsObject> {
-    return this.request<StreamResponse.AsObject>(Methods.sendMessage, params);
+  async sendMessage(params: SendMessageRequest): Promise<StreamResponse> {
+    return this.request<StreamResponse>(Methods.sendMessage, params);
   }
 
   /**
    * Retrieves a task by ID.
    */
-  async getTask(params: GetTaskRequest.AsObject): Promise<Task.AsObject> {
-    return this.request<Task.AsObject>(Methods.getTask, params);
+  async getTask(params: GetTaskRequest): Promise<Task> {
+    return this.request<Task>(Methods.getTask, params);
   }
 
   /**
    * Cancels a task by ID.
    */
-  async cancelTask(params: CancelTaskRequest.AsObject): Promise<Task.AsObject> {
-    return this.request<Task.AsObject>(Methods.cancelTask, params);
+  async cancelTask(params: CancelTaskRequest): Promise<Task> {
+    return this.request<Task>(Methods.cancelTask, params);
   }
 
   /** Lists tasks, with optional filtering and pagination. */
   async listTasks(
-    params: Partial<ListTasksRequest.AsObject> = {},
-  ): Promise<ListTasksResponse.AsObject> {
-    return this.request<ListTasksResponse.AsObject>(Methods.listTasks, params);
+    params: Partial<ListTasksRequest> = {},
+  ): Promise<ListTasksResponse> {
+    return this.request<ListTasksResponse>(Methods.listTasks, params);
   }
 
   /** Retrieves a push notification config by task ID and config ID. */
   async getTaskPushNotificationConfig(
-    params: GetTaskPushNotificationConfigRequest.AsObject,
-  ): Promise<TaskPushNotificationConfig.AsObject> {
-    return this.request<TaskPushNotificationConfig.AsObject>(
+    params: GetTaskPushConfigRequest,
+  ): Promise<TaskPushConfig> {
+    return this.request<TaskPushConfig>(
       Methods.getTaskPushNotificationConfig,
       params,
     );
@@ -111,12 +110,12 @@ export class A2AClient {
 
   /**
    * Creates a push notification config for a task.
-   * The config itself is the request payload.
+   * Request body: `taskId`, nested `config`, optional `tenant`.
    */
   async createTaskPushNotificationConfig(
-    params: TaskPushNotificationConfig.AsObject,
-  ): Promise<TaskPushNotificationConfig.AsObject> {
-    return this.request<TaskPushNotificationConfig.AsObject>(
+    params: CreateTaskPushConfigRequest,
+  ): Promise<TaskPushConfig> {
+    return this.request<TaskPushConfig>(
       Methods.createTaskPushNotificationConfig,
       params,
     );
@@ -124,9 +123,9 @@ export class A2AClient {
 
   /** Lists push notification configs for a task. */
   async listTaskPushNotificationConfigs(
-    params: ListTaskPushNotificationConfigsRequest.AsObject,
-  ): Promise<ListTaskPushNotificationConfigsResponse.AsObject> {
-    return this.request<ListTaskPushNotificationConfigsResponse.AsObject>(
+    params: ListTaskPushConfigRequest,
+  ): Promise<ListTaskPushConfigResponse> {
+    return this.request<ListTaskPushConfigResponse>(
       Methods.listTaskPushNotificationConfigs,
       params,
     );
@@ -134,19 +133,16 @@ export class A2AClient {
 
   /** Deletes a push notification config. Returns void — server sends an empty result. */
   async deleteTaskPushNotificationConfig(
-    params: DeleteTaskPushNotificationConfigRequest.AsObject,
+    params: DeleteTaskPushConfigRequest,
   ): Promise<void> {
     await this.request<void>(Methods.deleteTaskPushNotificationConfig, params);
   }
 
   /** Retrieves the extended agent card. */
   async getExtendedAgentCard(
-    params: Partial<GetExtendedAgentCardRequest.AsObject> = {},
-  ): Promise<AgentCard.AsObject> {
-    return this.request<AgentCard.AsObject>(
-      Methods.getExtendedAgentCard,
-      params,
-    );
+    params: Partial<GetExtendedAgentCardRequest> = {},
+  ): Promise<AgentCard> {
+    return this.request<AgentCard>(Methods.getExtendedAgentCard, params);
   }
 
   /**
@@ -164,10 +160,10 @@ export class A2AClient {
    * @throws {JsonRpcProtocolError} On a JSON-RPC error frame (terminal).
    */
   async *sendStreamingMessage(
-    params: SendMessageRequest.AsObject,
+    params: SendMessageRequest,
     signal?: AbortSignal,
-  ): AsyncGenerator<StreamResponse.AsObject> {
-    yield* this.stream<StreamResponse.AsObject>(
+  ): AsyncGenerator<StreamResponse> {
+    yield* this.stream<StreamResponse>(
       Methods.sendStreamingMessage,
       params,
       signal,
@@ -181,10 +177,10 @@ export class A2AClient {
    * @throws {JsonRpcProtocolError} On a JSON-RPC error frame (terminal).
    */
   async *subscribeToTask(
-    params: SubscribeToTaskRequest.AsObject,
+    params: SubscribeToTaskRequest,
     signal?: AbortSignal,
-  ): AsyncGenerator<StreamResponse.AsObject> {
-    yield* this.stream<StreamResponse.AsObject>(
+  ): AsyncGenerator<StreamResponse> {
+    yield* this.stream<StreamResponse>(
       Methods.subscribeToTask,
       params,
       signal,

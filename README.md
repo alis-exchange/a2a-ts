@@ -5,7 +5,7 @@ TypeScript types and a **JSON-RPC 2.0** client for the **Agent-to-Agent (A2A)** 
 ## Requirements
 
 - **Runtime**: `fetch`, `TextDecoderStream`, and `AbortSignal` (e.g. **Node.js 18+** or modern browsers).
-- **Types**: Request/response shapes use `*.AsObject` types from `lf/a2a/v1/a2a_pb` (protobuf JS).
+- **Types**: JSON-RPC request/response shapes are defined in `transport/jsonrpc/wire` for the **A2A JSON-RPC wire format** (what a conforming server expects on the wire). They differ from protobuf `*.AsObject` / grpc-web JSON field names and nesting. The generated files under `lf/a2a/v1/` remain available for gRPC/protobuf workflows.
 
 ## Installation
 
@@ -31,11 +31,18 @@ const client = new A2AClient({
   extraHeaders: { "X-Custom-Header": "value" }, // optional
 });
 
-// Unary — one JSON-RPC response
+// Unary — one JSON-RPC response (wire-format fields: `parts`, `acceptedOutputModes`, `returnImmediately`, …)
 const response = await client.sendMessage({
   tenant: "",
-  message: { text: { text: "Hello" } },
-  configuration: { acceptedOutputModesList: ["text"], blocking: true },
+  message: {
+    messageId: "00000000-0000-7000-0000-000000000001",
+    role: "ROLE_USER",
+    parts: [{ text: "Hello" }],
+  },
+  configuration: {
+    acceptedOutputModes: ["text/plain"],
+    returnImmediately: true,
+  },
 });
 
 // Streaming — SSE frames, each parsed as JSON-RPC
@@ -43,8 +50,15 @@ const controller = new AbortController();
 for await (const event of client.sendStreamingMessage(
   {
     tenant: "",
-    message: { text: { text: "Hello" } },
-    configuration: { acceptedOutputModesList: ["text"], blocking: false },
+    message: {
+      messageId: "00000000-0000-7000-0000-000000000002",
+      role: "ROLE_USER",
+      parts: [{ text: "Hello" }],
+    },
+    configuration: {
+      acceptedOutputModes: ["text/plain"],
+      returnImmediately: false,
+    },
   },
   controller.signal,
 )) {
@@ -69,7 +83,7 @@ for await (const event of client.sendStreamingMessage(
 | `sendStreamingMessage`             | `SendStreamingMessage`             | Streaming (async iterator) |
 | `subscribeToTask`                  | `SubscribeToTask`                  | Streaming (async iterator) |
 
-Push-notification and extended-card helpers mirror the A2A protobuf service surface.
+Push-notification methods use the same JSON-RPC names as the protobuf RPCs, but **request bodies** follow the JSON-RPC wire shape (e.g. `createTaskPushNotificationConfig` expects `{ taskId, config }`, not a flat protobuf `AsObject`).
 
 ## Transport (`transport/jsonrpc`)
 
@@ -126,17 +140,27 @@ import type {
   JsonRpcError,
   JsonRpcRequest,
   JsonRpcResponse,
+  SendMessageRequest,
+  StreamResponse,
+  Task,
 } from "./transport/jsonrpc";
 ```
 
-Protobuf message types (e.g. `SendMessageRequest`) live under `lf/a2a/v1/a2a_pb`.
+### Protobuf vs JSON-RPC types
+
+| Use case | Types |
+| -------- | ----- |
+| **JSON-RPC client** (`A2AClient`) | Import wire types from `./transport/jsonrpc` (e.g. `SendMessageRequest`, `Task`, `StreamResponse`). These match the **A2A JSON-RPC** payloads your server accepts. |
+| **gRPC / binary protobuf** | Generated messages under `lf/a2a/v1/a2a_pb` (`*.AsObject`, `Message`, etc.). |
+
+Do not pass protobuf `AsObject` trees to `A2AClient` methods: field names differ (`parts` vs `partsList`, `acceptedOutputModes` vs `acceptedOutputModesList`, nested push `config`, flattened `Part` JSON, etc.).
 
 ## Project layout
 
 | Path                 | Purpose                                    |
 | -------------------- | ------------------------------------------ |
 | `lf/a2a/v1/`         | Generated protobuf JS/TS (A2A API)         |
-| `transport/jsonrpc/` | JSON-RPC client, SSE parser, errors, types |
+| `transport/jsonrpc/` | JSON-RPC client, SSE parser, errors, **wire types** (`wire/`) |
 
 ## Dependencies
 
